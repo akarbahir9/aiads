@@ -15,7 +15,7 @@ const GeneratedAdCard: React.FC<GeneratedAdCardProps> = ({ ad, onAdUpdated }) =>
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const handleRegenerate = () => {
-    navigate('/', { state: { ad } });
+    navigate('/app', { state: { ad } });
   };
 
   return (

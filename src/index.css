@@ -7,3 +7,10 @@
     @apply bg-background text-text-primary antialiased;
   }
 }
+
+@layer utilities {
+    .bg-grid-pattern {
+        background-image: linear-gradient(theme(colors.border-color / 80%) 1px, transparent 1px), linear-gradient(to right, theme(colors.border-color / 80%) 1px, transparent 1px);
+        background-size: 3rem 3rem;
+    }
+}

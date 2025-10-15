@@ -48,7 +48,7 @@ const BrandCard: React.FC<BrandCardProps> = ({ brand, onBrandDeleted }) => {
   };
 
   return (
-    <Link to={`/brands/${brand.id}`} className="block">
+    <Link to={`/app/brands/${brand.id}`} className="block">
       <motion.div 
         whileHover={{ y: -5 }}
         className="bg-surface border border-border-color rounded-lg p-4 flex flex-col justify-between h-full cursor-pointer transition-shadow hover:shadow-lg hover:shadow-primary/10"

@@ -81,7 +81,7 @@ const ReferenceFolderCard: React.FC<ReferenceFolderCardProps> = ({ folder, onFol
   const allKeywords = [...(folder.manual_keywords || []), ...(folder.auto_keywords || [])];
 
   return (
-    <Link to={`/references/${folder.id}`} className="block">
+    <Link to={`/app/references/${folder.id}`} className="block">
       <motion.div 
         whileHover={{ y: -5 }}
         className="bg-surface border border-border-color rounded-lg flex flex-col transition-shadow hover:shadow-lg hover:shadow-primary/10 cursor-pointer h-full"

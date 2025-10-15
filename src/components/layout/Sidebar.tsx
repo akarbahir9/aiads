@@ -1,11 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutGrid, Library, Users, Bot, X } from 'lucide-react';
+import { LayoutGrid, Library, Users, Bot, X, LogOut } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 const navigation = [
-  { name: 'Create Ad', href: '/', icon: LayoutGrid },
-  { name: 'References', href: '/references', icon: Library },
-  { name: 'Brands', href: '/brands', icon: Users },
+  { name: 'Create Ad', href: '/app', icon: LayoutGrid },
+  { name: 'References', href: '/app/references', icon: Library },
+  { name: 'Brands', href: '/app/brands', icon: Users },
 ];
 
 interface SidebarProps {
@@ -14,6 +15,8 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
+  const { signOut } = useAuth();
+
   return (
     <>
       {/* Backdrop for mobile */}
@@ -44,6 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             <NavLink
               key={item.name}
               to={item.href}
+              end={item.href === '/app'} // `end` prop for the root app link
               onClick={() => setIsOpen(false)} // Close sidebar on navigation
               className={({ isActive }) =>
                 `flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors duration-200 ${
@@ -58,6 +62,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             </NavLink>
           ))}
         </nav>
+        <div className="px-4 py-4 border-t border-border-color">
+            <button
+                onClick={signOut}
+                className="w-full flex items-center px-4 py-2.5 text-sm font-medium rounded-lg text-text-secondary hover:bg-secondary hover:text-text-primary transition-colors duration-200"
+            >
+                <LogOut className="h-5 w-5 mr-3" />
+                Logout
+            </button>
+        </div>
       </div>
     </>
   );

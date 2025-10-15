@@ -27,7 +27,16 @@ module.exports = {
       backgroundImage: {
         'gradient-button': 'linear-gradient(to right, #4F46E5, #A78BFA)',
         'gradient-button-hover': 'linear-gradient(to right, #4338CA, #8B5CF6)',
-      }
+      },
+      keyframes: {
+        grid: {
+          '0%': { transform: 'translateY(-50%)' },
+          '100%': { transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        grid: 'grid 15s linear infinite',
+      },
     },
   },
   plugins: [],

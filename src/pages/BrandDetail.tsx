@@ -68,7 +68,7 @@ const BrandDetail = () => {
     return (
       <div className="text-center pt-20">
         <h2 className="text-2xl font-bold text-red-500">Brand not found</h2>
-        <Link to="/brands" className="mt-4 inline-flex items-center text-primary hover:underline">
+        <Link to="/app/brands" className="mt-4 inline-flex items-center text-primary hover:underline">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to all brands
         </Link>
@@ -79,7 +79,7 @@ const BrandDetail = () => {
   return (
     <div className="space-y-8">
       <div>
-        <Link to="/brands" className="mb-4 inline-flex items-center text-sm font-medium text-text-secondary hover:text-text-primary">
+        <Link to="/app/brands" className="mb-4 inline-flex items-center text-sm font-medium text-text-secondary hover:text-text-primary">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to all brands
         </Link>
@@ -105,7 +105,7 @@ const BrandDetail = () => {
             <Image className="h-12 w-12 mx-auto text-text-secondary" />
             <h3 className="text-lg font-medium text-text-primary mt-4">No Ads Generated Yet</h3>
             <p className="text-text-secondary mt-2 max-w-md mx-auto">Go to the "Create Ad" page to generate the first ad for {brand.name}.</p>
-            <Link to="/" className="mt-6 inline-block bg-primary hover:bg-primary-hover text-white font-bold py-2 px-4 rounded-lg">
+            <Link to="/app" className="mt-6 inline-block bg-primary hover:bg-primary-hover text-white font-bold py-2 px-4 rounded-lg">
               Create Ad
             </Link>
           </div>

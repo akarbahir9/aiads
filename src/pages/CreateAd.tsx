@@ -5,10 +5,11 @@ import * as z from 'zod';
 import { supabase } from '../lib/supabase';
 import { Brand, GeneratedAd } from '../types';
 import { UploadCloud, Sparkles, Image, ChevronDown, Loader2, Info } from 'lucide-react';
-import { findBestReferenceFolder, constructNanoBananaPrompt, generateVisual, generateCaption } from '../lib/ai';
+import { findBestReferenceFolder, constructNanoBananaPrompt, generateVisual } from '../lib/ai';
 import { toast } from 'sonner';
 import GenerationProgress from '../components/create-ad/GenerationProgress';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 const adGoals = ["Awareness", "Engagement", "Sales", "Premium Branding"];
 const adRatios = ["1:1 Square", "4:5 Portrait", "9:16 Story", "16:9 Landscape"];
@@ -31,6 +32,7 @@ const CreateAd = () => {
   const [generationStatus, setGenerationStatus] = useState<string[]>([]);
   const [generationResult, setGenerationResult] = useState<Partial<GeneratedAd> | null>(null);
 
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const adToRegenerate: GeneratedAd | null = location.state?.ad || null;
@@ -46,9 +48,10 @@ const CreateAd = () => {
 
   useEffect(() => {
     const fetchBrands = async () => {
+      if (!user) return;
       setIsLoadingBrands(true);
       try {
-        const { data, error } = await supabase.from('brands').select('*').order('name', { ascending: true });
+        const { data, error } = await supabase.from('brands').select('*').eq('user_id', user.id).order('name', { ascending: true });
         if (error) throw error;
         setBrands(data || []);
       } catch (err: any) {
@@ -58,7 +61,7 @@ const CreateAd = () => {
       }
     };
     fetchBrands();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (adToRegenerate && brands.length > 0) {
@@ -83,45 +86,46 @@ const CreateAd = () => {
     setGenerationResult(null);
 
     const generationPromise = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("You must be logged in to generate an ad.");
+      if (!user) throw new Error("You must be logged in to generate an ad.");
 
       setGenerationStatus(prev => [...prev, "Fetching brand and reference data..."]);
       const selectedBrand = brands.find(b => b.id === formData.brandId);
       if (!selectedBrand) throw new Error("Selected brand not found.");
 
-      const { data: allFolders, error: folderError } = await supabase.from('reference_folders').select('*');
+      const { data: allFolders, error: folderError } = await supabase.from('reference_folders').select('*').eq('user_id', user.id);
       if (folderError) throw new Error("Could not fetch reference folders.");
       
       setGenerationStatus(prev => [...prev, "✅ Data fetched. Matching references..."]);
       await new Promise(res => setTimeout(res, 500));
       const matchedReference = findBestReferenceFolder(formData.concept, allFolders || []);
-      if (!matchedReference) throw new Error("No suitable reference folder found.");
+      if (!matchedReference) throw new Error("No suitable reference folder found. Please upload one in the 'References' section.");
       setGenerationStatus(prev => [...prev, `✅ Reference matched: "${matchedReference.name}"`]);
 
       await new Promise(res => setTimeout(res, 300));
-      const visualPrompt = constructNanoBananaPrompt(formData, selectedBrand, matchedReference);
+      const visualPromptObject = constructNanoBananaPrompt(formData, selectedBrand, matchedReference);
       setGenerationStatus(prev => [...prev, "✅ Visual prompt constructed."]);
 
       setGenerationStatus(prev => [...prev, "Generating visual... (this may take a moment)"]);
-      const imageUrl = await generateVisual(formData.adRatio);
+      const imageUrl = await generateVisual(visualPromptObject, formData.adRatio);
       setGenerationStatus(prev => [...prev, "✅ Visual generated successfully."]);
 
-      setGenerationStatus(prev => [...prev, "Writing caption..."]);
-      const caption = await generateCaption(formData.adGoal, selectedBrand.name, formData.concept);
-      setGenerationStatus(prev => [...prev, "✅ Caption written."]);
+      // Skipping caption generation as requested
+      setGenerationStatus(prev => [...prev, "Skipping caption generation..."]);
+      const caption = "Caption generation skipped by user.";
+      await new Promise(res => setTimeout(res, 300));
+      setGenerationStatus(prev => [...prev, "✅ Caption step skipped."]);
 
       setGenerationStatus(prev => [...prev, "Saving ad to database..."]);
       const finalAdData: Omit<GeneratedAd, 'id' | 'created_at'> = {
         brand_id: selectedBrand.id,
-        user_id: session.user.id,
+        user_id: user.id,
         goal: formData.adGoal,
         ratio: formData.adRatio,
         concept: formData.concept,
         message: formData.message,
         include_logo: formData.includeLogo,
         used_reference_folder_id: matchedReference.id,
-        visual_style_prompt: visualPrompt,
+        visual_style_prompt: JSON.stringify(visualPromptObject, null, 2),
         image_url: imageUrl,
         caption: caption,
         version: adToRegenerate ? adToRegenerate.version + 1 : 1,

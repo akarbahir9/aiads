@@ -69,7 +69,7 @@ const ReferenceDetail = () => {
     return (
       <div className="text-center pt-20">
         <h2 className="text-2xl font-bold text-red-500">Reference Folder not found</h2>
-        <Link to="/references" className="mt-4 inline-flex items-center text-primary hover:underline">
+        <Link to="/app/references" className="mt-4 inline-flex items-center text-primary hover:underline">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to all references
         </Link>
@@ -80,7 +80,7 @@ const ReferenceDetail = () => {
   return (
     <div className="space-y-8">
       <div>
-        <Link to="/references" className="mb-4 inline-flex items-center text-sm font-medium text-text-secondary hover:text-text-primary">
+        <Link to="/app/references" className="mb-4 inline-flex items-center text-sm font-medium text-text-secondary hover:text-text-primary">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to References Library
         </Link>

@@ -1,10 +1,15 @@
 import { Brand, ReferenceFolder } from '../types';
 
-// --- SIMULATED AI FUNCTIONS ---
+// --- API CLIENT INITIALIZATION ---
+
+const openRouterApiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+const OPENROUTER_API_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+
+const nanoBananaApiKey = import.meta.env.VITE_NANOBANANA_API_KEY;
+const NANO_BANANA_API_ENDPOINT = "https://api.nanobanana.dev/v1/generate"; // Fictional endpoint
 
 /**
  * Simulates finding the best reference folder by matching keywords.
- * In a real app, this would be a call to a vector database or a semantic search model.
  */
 export const findBestReferenceFolder = (concept: string, folders: ReferenceFolder[]): ReferenceFolder | null => {
   if (folders.length === 0) return null;
@@ -33,87 +38,127 @@ export const findBestReferenceFolder = (concept: string, folders: ReferenceFolde
     }
   });
 
-  // If no keywords matched, just return the first folder as a fallback
   return bestMatch || folders[0];
 };
 
 /**
- * Simulates constructing a detailed prompt for an image generation model like Nano Banana.
+ * Constructs a structured payload for an image generation model like Nano Banana.
  */
 export const constructNanoBananaPrompt = (
   inputs: { concept: string; message: string; goal: string; ratio: string },
   brand: Brand,
   reference: ReferenceFolder
-): string => {
+): object => {
   const referenceStyle = [...(reference.manual_keywords || []), ...(reference.auto_keywords || [])].join(', ');
   
-  return `
-    Generate a photorealistic, high-quality ad visual with the following characteristics:
-    - Core Concept: "${inputs.concept}"
-    - Key Message to Convey: "${inputs.message}"
-    - Campaign Goal: ${inputs.goal} (e.g., for 'Sales', make it eye-catching; for 'Premium Branding', make it elegant)
-    - Aspect Ratio: ${inputs.ratio}
-    - Brand Personality: ${brand.personality_keywords.join(', ')}
-    - Visual Style Inspiration (from reference folder '${reference.name}'): ${referenceStyle}, cinematic lighting, clean, polished aesthetic.
-    - IMPORTANT: Do not include any text, words, or letters in the image. The logo will be added later if needed.
-  `.trim().replace(/\s+/g, ' ');
+  return {
+    model: "nano-banana-photorealistic-v2",
+    prompt: `A photorealistic, high-quality ad visual. Core Concept: "${inputs.concept}". Message: "${inputs.message}".`,
+    style_preset: "cinematic-default",
+    parameters: {
+      campaign_goal: inputs.goal,
+      aspect_ratio: inputs.ratio,
+      brand_personality: (brand.personality_keywords || []).join(', '),
+      visual_style_inspiration: `From reference folder '${reference.name}': ${referenceStyle}, cinematic lighting, clean, polished aesthetic.`,
+      negative_prompt: "text, words, letters, logos, watermarks",
+    }
+  };
 };
 
 /**
- * Simulates generating an image. Returns a placeholder URL based on the aspect ratio.
+ * Generates a visual by calling the (fictional) Nano Banana API.
+ * Falls back to a placeholder image service if the API call fails.
  */
-export const generateVisual = async (ratio: string): Promise<string> => {
-    const ratioMap: { [key: string]: string } = {
-        "1:1 Square": "1080x1080",
-        "4:5 Portrait": "1080x1350",
-        "9:16 Story": "1080x1920",
-        "16:9 Landscape": "1920x1080",
-    };
-    const dimensions = ratioMap[ratio] || "1080x1080";
-    const randomId = Math.floor(Math.random() * 1000); // To get different images
+export const generateVisual = async (promptPayload: object, ratio: string): Promise<string> => {
+    console.log("Attempting to generate visual with Nano Banana with payload:", promptPayload);
 
-    // Simulate network delay for AI generation
-    await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
-    
-    return `https://picsum.photos/seed/${randomId}/${dimensions.replace('x', '/')}`;
+    try {
+        if (!nanoBananaApiKey || nanoBananaApiKey === "YOUR_API_KEY") {
+            throw new Error("Nano Banana API key not configured. Falling back to placeholder.");
+        }
+
+        const response = await fetch(NANO_BANANA_API_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${nanoBananaApiKey}`
+            },
+            body: JSON.stringify(promptPayload)
+        });
+
+        if (!response.ok) throw new Error(`Nano Banana API responded with status: ${response.status}`);
+        const result = await response.json();
+        if (!result.imageUrl) throw new Error("Invalid response from Nano Banana API.");
+        
+        console.log("Successfully generated image from Nano Banana.");
+        return result.imageUrl;
+
+    } catch (error: any) {
+        console.warn(`Nano Banana API call failed: ${error.message}. Using placeholder image service.`);
+        
+        const ratioMap: { [key: string]: string } = {
+            "1:1 Square": "1080x1080",
+            "4:5 Portrait": "1080x1350",
+            "9:16 Story": "1080x1920",
+            "16:9 Landscape": "1920x1080",
+        };
+        const dimensions = ratioMap[ratio] || "1080x1080";
+        const randomId = Math.floor(Math.random() * 1000);
+
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        return `https://picsum.photos/seed/${randomId}/${dimensions.replace('x', '/')}`;
+    }
 };
 
 
 /**
- * Simulates generating a social media caption based on the ad goal and brand.
+ * Generates a social media caption using OpenRouter with a Google model.
  */
 export const generateCaption = async (goal: string, brandName: string, concept: string): Promise<string> => {
-  const brandHashtag = `#${brandName.replace(/\s+/g, '')}`;
-  let caption = '';
-
-  switch (goal) {
-    case 'Sales':
-      caption = `Ready for an upgrade? ✨ Discover ${concept.toLowerCase()} with ${brandName}. Shop the collection now and experience the difference. 
-      
-      ➡️ Click the link in our bio to order!
-      
-      #Sales #LimitedTimeOffer ${brandHashtag}`;
-      break;
-    case 'Engagement':
-      caption = `What does "${concept.toLowerCase()}" mean to you? 🤔 We think it's all about quality and passion. Let us know your thoughts in the comments below! 👇
-      
-      #Community #Discussion ${brandHashtag}`;
-      break;
-    case 'Premium Branding':
-      caption = `Elegance is an attitude. ${brandName}.
-      
-      #Luxury #Premium #Craftsmanship ${brandHashtag}`;
-      break;
-    case 'Awareness':
-    default:
-      caption = `Introducing the heart of ${brandName}: ${concept.toLowerCase()}. Built with passion, designed for you. ❤️
-      
-      #BrandAwareness #New #Discover ${brandHashtag}`;
-      break;
+  if (!openRouterApiKey || openRouterApiKey === "YOUR_API_KEY") {
+    return "⚠️ OpenRouter API key not configured. Please add it to your .env file to generate captions.";
   }
-  
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
 
-  return caption;
+  const systemPrompt = `You are a social media marketing expert. Write a short, engaging social media caption for the brand "${brandName}". The caption should be concise, include relevant emojis, and have 2-3 relevant hashtags. Create a brand-specific hashtag like #${brandName.replace(/\s+/g, '')}. Return only the caption text, without any preamble or explanation.`;
+  
+  const userPrompt = `The ad's core concept is: "${concept}". The primary goal of this ad is: "${goal}".`;
+
+  try {
+    const response = await fetch(OPENROUTER_API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${openRouterApiKey}`,
+            'HTTP-Referer': 'https://agencybrain.dualite.dev', // Recommended by OpenRouter
+            'X-Title': 'AgencyBrain', // Recommended by OpenRouter
+        },
+        body: JSON.stringify({
+            model: "nousresearch/nous-hermes-2-mixtral-8x7b-dpo", // Using a reliable, free model
+            messages: [
+                { "role": "system", "content": systemPrompt },
+                { "role": "user", "content": userPrompt }
+            ]
+        })
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.json();
+        console.error("OpenRouter API Error:", errorBody);
+        throw new Error(`OpenRouter API responded with status ${response.status}: ${errorBody.error?.message || 'Unknown error'}`);
+    }
+
+    const result = await response.json();
+    const text = result.choices[0]?.message?.content;
+    
+    if (!text) {
+        throw new Error("Invalid response structure from OpenRouter API.");
+    }
+
+    return text.trim();
+
+  } catch (error) {
+    console.error("Error generating caption with OpenRouter:", error);
+    throw new Error("Failed to generate caption. Please check your OpenRouter API key and network connection.");
+  }
 };
